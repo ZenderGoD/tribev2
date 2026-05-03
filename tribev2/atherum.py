@@ -1,0 +1,225 @@
+# Copyright (c) Meta Platforms, Inc. and affiliates.
+# All rights reserved.
+#
+# This source code is licensed under the license found in the
+# LICENSE file in the root directory of this source tree.
+
+"""Atherum-facing helpers for bounded TRIBE v2 result summaries.
+
+The functions in this module intentionally avoid importing torch, numpy, or the
+model runtime. They can run in API/control-plane tests and can also be reused by
+GPU workers after real TRIBE predictions are available.
+"""
+
+from __future__ import annotations
+
+from collections.abc import Iterable, Sequence
+from statistics import mean
+from typing import Any
+
+
+ROI_REGISTRY: dict[str, dict[str, str]] = {
+    "FFA": {
+        "label": "Face Detection",
+        "description": "Face-like visual structure is predicted to be salient.",
+    },
+    "V1_V2": {
+        "label": "Low-Level Visual Signal",
+        "description": "Contrast, edges, luminance, or early visual structure is active.",
+    },
+    "V4": {
+        "label": "Color and Form Processing",
+        "description": "Color relationships and shape boundaries are active.",
+    },
+    "LO": {
+        "label": "Object Recognition",
+        "description": "Objects or discrete elements are registering as visual units.",
+    },
+    "PPA": {
+        "label": "Scene Recognition",
+        "description": "Background or spatial context is predicted to be salient.",
+    },
+    "STS": {
+        "label": "Social and Motion Cues",
+        "description": "Biological motion, expression, or social cue processing is active.",
+    },
+    "DAN": {
+        "label": "Spatial Attention",
+        "description": "The stimulus is directing spatial attention.",
+    },
+    "VWFA": {
+        "label": "Text Processing",
+        "description": "Readable text is occupying visual attention.",
+    },
+    "DMN": {
+        "label": "Default Mode Network",
+        "description": "Self-referential or associative processing is relatively active.",
+    },
+    "AV_ASSOC": {
+        "label": "Audio-Visual Association",
+        "description": "Cross-modal binding regions are active.",
+    },
+}
+
+COGNITIVE_LOAD_ROIS = ("VWFA", "DAN", "DMN", "AV_ASSOC")
+DEFAULT_CAVEATS = [
+    "TRIBE output is a model-predicted neural-response proxy, not observed audience behavior.",
+    "Use this as one signal alongside simulation, panel reasoning, and source evidence.",
+]
+
+
+def summarize_vertex_predictions(
+    predictions: Sequence[Sequence[float]],
+    roi_vertex_map: dict[str, Iterable[int]],
+    *,
+    modality: str = "multimodal",
+    model_id: str = "facebook/tribev2",
+    max_regions: int = 5,
+) -> dict[str, Any]:
+    """Convert raw vertex predictions into a bounded Atherum summary.
+
+    Parameters
+    ----------
+    predictions:
+        Per-timestep vertex predictions with shape ``T x V``.
+    roi_vertex_map:
+        Mapping from Atherum ROI key to vertex indices in the prediction vector.
+    modality:
+        Source modality label used by Atherum persistence.
+    model_id:
+        Model identifier to persist with the summary.
+    max_regions:
+        Number of top region labels to expose in the high-level summary.
+    """
+
+    rows = _coerce_prediction_rows(predictions)
+    normalized = _normalize_rows(rows)
+    n_timesteps = len(normalized)
+    n_vertices = len(normalized[0])
+
+    roi_data = []
+    for region_key, vertices in roi_vertex_map.items():
+        valid_vertices = _valid_vertices(vertices, n_vertices)
+        if not valid_vertices:
+            continue
+
+        temporal = [
+            round(mean(row[index] for index in valid_vertices), 4)
+            for row in normalized
+        ]
+        activation = round(mean(temporal), 4)
+        registry = ROI_REGISTRY.get(region_key, {})
+        label = registry.get("label", region_key)
+        description = registry.get(
+            "description",
+            "Custom region derived from the supplied ROI vertex map.",
+        )
+
+        roi_data.append(
+            {
+                "regionKey": region_key,
+                "label": label,
+                "activation": activation,
+                "temporalActivations": temporal,
+                "vertexCount": len(valid_vertices),
+                "description": description,
+            }
+        )
+
+    roi_data.sort(key=lambda item: item["activation"], reverse=True)
+
+    metrics = _build_metrics(normalized, roi_data)
+    top_regions = [item["label"] for item in roi_data[:max_regions]]
+    summary = _build_summary(top_regions, metrics)
+
+    return {
+        "modelId": model_id,
+        "modality": modality,
+        "predictionShape": {
+            "timesteps": n_timesteps,
+            "vertices": n_vertices,
+        },
+        "summary": summary,
+        "caveats": list(DEFAULT_CAVEATS),
+        "topRegions": top_regions,
+        "metrics": metrics,
+        "roiData": roi_data,
+    }
+
+
+def _coerce_prediction_rows(predictions: Sequence[Sequence[float]]) -> list[list[float]]:
+    if not predictions:
+        raise ValueError("predictions must contain at least one timestep")
+
+    rows: list[list[float]] = []
+    width: int | None = None
+    for timestep, row in enumerate(predictions):
+        values = [float(value) for value in row]
+        if not values:
+            raise ValueError("prediction rows must contain at least one vertex")
+        if width is None:
+            width = len(values)
+        elif len(values) != width:
+            raise ValueError(
+                f"prediction row {timestep} has {len(values)} vertices; expected {width}",
+            )
+        rows.append(values)
+
+    return rows
+
+
+def _normalize_rows(rows: list[list[float]]) -> list[list[float]]:
+    flat = [value for row in rows for value in row]
+    min_value = min(flat)
+    max_value = max(flat)
+    span = max_value - min_value
+    if span == 0:
+        return [[0.0 for _value in row] for row in rows]
+
+    return [[(value - min_value) / span for value in row] for row in rows]
+
+
+def _valid_vertices(vertices: Iterable[int], n_vertices: int) -> list[int]:
+    valid: list[int] = []
+    seen: set[int] = set()
+    for vertex in vertices:
+        index = int(vertex)
+        if index in seen or index < 0 or index >= n_vertices:
+            continue
+        seen.add(index)
+        valid.append(index)
+    return valid
+
+
+def _build_metrics(
+    normalized: list[list[float]],
+    roi_data: list[dict[str, Any]],
+) -> dict[str, float]:
+    all_values = [value for row in normalized for value in row]
+    by_key = {item["regionKey"]: item["activation"] for item in roi_data}
+
+    cognitive_values = [
+        by_key[key] for key in COGNITIVE_LOAD_ROIS if key in by_key
+    ]
+
+    top_activation = roi_data[0]["activation"] if roi_data else 0.0
+    return {
+        "predictedSignalStrength": round(mean(all_values), 4),
+        "visualSalience": round(top_activation, 4),
+        "cognitiveLoadProxy": round(
+            mean(cognitive_values) if cognitive_values else top_activation,
+            4,
+        ),
+    }
+
+
+def _build_summary(top_regions: list[str], metrics: dict[str, float]) -> str:
+    if not top_regions:
+        return "TRIBE produced no region summary for the supplied ROI map."
+
+    return (
+        f"TRIBE predicts strongest activity around {top_regions[0]} "
+        f"with signal strength {metrics['predictedSignalStrength']:.2f}, "
+        f"visual salience {metrics['visualSalience']:.2f}, and cognitive-load "
+        f"proxy {metrics['cognitiveLoadProxy']:.2f}."
+    )
