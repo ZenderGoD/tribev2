@@ -118,7 +118,7 @@
 - [x] Update Modal wiring to mount a private model volume and cache volume without an HF secret.
 - [x] Update the smoke script to validate local `config.yaml` and `best.ckpt` before importing TRIBE.
 - [x] Run full no-model tests and local model preflight.
-- [ ] Commit the local artifact runtime changes.
+- [x] Commit the local artifact runtime changes.
 
 ## Later Chunks
 
