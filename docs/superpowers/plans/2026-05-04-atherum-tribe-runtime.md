@@ -72,9 +72,21 @@
 - [x] Run targeted tests and smoke tests.
 - [x] Commit the ROI map builder.
 
+## Chunk 2: Local Worker Contract
+
+### Task 6: Add no-download Atherum worker CLI
+
+**Files:**
+- Create: `tribev2/atherum_worker.py`
+- Test: `tests/test_atherum_worker.py`
+
+- [x] Write failing tests for job validation, fake-model worker output, and CLI JSON writing.
+- [x] Run tests and verify they fail because `atherum_worker` is missing.
+- [x] Implement the worker job contract, fake model, `run_worker_job`, and `python -m tribev2.atherum_worker`.
+- [x] Run targeted tests and the no-model suite.
+- [ ] Commit the worker CLI.
+
 ## Later Chunks
 
-- Add a worker-facing runner that calls `TribeModel.from_pretrained`.
-- Add optional atlas-backed ROI map construction.
 - Add real-model smoke tests gated behind `HF_TOKEN`.
-- Add Atherum worker API once the fork contract is stable.
+- Add Modal/FastAPI worker API once the local worker contract is stable.
