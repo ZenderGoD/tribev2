@@ -18,11 +18,11 @@
 - Modify: `tribev2/__init__.py`
 - Test: `tests/test_package_import.py`
 
-- [ ] Write a failing test proving `import tribev2` does not import heavy runtime dependencies.
-- [ ] Run the test and verify it fails against the current eager `TribeModel` import.
-- [ ] Replace the eager import with a lazy `__getattr__` that preserves `from tribev2 import TribeModel`.
-- [ ] Run the targeted test and existing smoke tests.
-- [ ] Commit the import fix.
+- [x] Write a failing test proving `import tribev2` does not import heavy runtime dependencies.
+- [x] Run the test and verify it fails against the current eager `TribeModel` import.
+- [x] Replace the eager import with a lazy `__getattr__` that preserves `from tribev2 import TribeModel`.
+- [x] Run the targeted test and existing smoke tests.
+- [x] Commit the import fix.
 
 ### Task 2: Add Atherum ROI summary helpers
 
@@ -30,11 +30,23 @@
 - Create: `tribev2/atherum.py`
 - Test: `tests/test_atherum_summary.py`
 
-- [ ] Write failing tests for temporal ROI extraction, invalid-vertex skipping, and stable Atherum output keys.
-- [ ] Run tests and verify they fail because the module is missing.
-- [ ] Implement pure-Python summary helpers with no model download and no eager heavy imports.
-- [ ] Run targeted tests and smoke tests.
-- [ ] Commit the summary layer.
+- [x] Write failing tests for temporal ROI extraction, invalid-vertex skipping, and stable Atherum output keys.
+- [x] Run tests and verify they fail because the module is missing.
+- [x] Implement pure-Python summary helpers with no model download and no eager heavy imports.
+- [x] Run targeted tests and smoke tests.
+- [x] Commit the summary layer.
+
+### Task 3: Add worker-facing runner seam
+
+**Files:**
+- Modify: `tribev2/atherum.py`
+- Test: `tests/test_atherum_runner.py`
+
+- [x] Write failing tests for modality-to-TRIBE path mapping and fake-model summary execution.
+- [x] Run tests and verify they fail because `AtherumTribeRunner` is missing.
+- [x] Implement a lazy-loading runner that accepts an injected model in tests.
+- [x] Run targeted tests and smoke tests.
+- [ ] Commit the runner seam.
 
 ## Later Chunks
 

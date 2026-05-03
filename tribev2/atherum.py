@@ -18,6 +18,13 @@ from statistics import mean
 from typing import Any
 
 
+MODALITY_PATH_ARGS = {
+    "text": "text_path",
+    "audio": "audio_path",
+    "video": "video_path",
+    "multimodal": "video_path",
+}
+
 ROI_REGISTRY: dict[str, dict[str, str]] = {
     "FFA": {
         "label": "Face Detection",
@@ -66,6 +73,59 @@ DEFAULT_CAVEATS = [
     "TRIBE output is a model-predicted neural-response proxy, not observed audience behavior.",
     "Use this as one signal alongside simulation, panel reasoning, and source evidence.",
 ]
+
+
+class AtherumTribeRunner:
+    """Small worker-facing adapter around ``TribeModel``.
+
+    Tests can inject a fake model. Production workers can let the runner lazily
+    load ``TribeModel.from_pretrained`` when model weights and credentials exist.
+    """
+
+    def __init__(
+        self,
+        *,
+        model: Any | None = None,
+        model_id: str = "facebook/tribev2",
+        cache_folder: str = "./cache/tribev2",
+        device: str = "auto",
+    ) -> None:
+        self._model = model
+        self.model_id = model_id
+        self.cache_folder = cache_folder
+        self.device = device
+
+    def load_model(self) -> Any:
+        if self._model is None:
+            from tribev2 import TribeModel
+
+            self._model = TribeModel.from_pretrained(
+                self.model_id,
+                cache_folder=self.cache_folder,
+                device=self.device,
+            )
+        return self._model
+
+    def analyze_path(
+        self,
+        *,
+        path: str,
+        modality: str,
+        roi_vertex_map: dict[str, Iterable[int]],
+        max_regions: int = 5,
+    ) -> dict[str, Any]:
+        path_arg = _path_arg_for_modality(modality)
+        model = self.load_model()
+        events = model.get_events_dataframe(**{path_arg: path})
+        predictions, _segments = model.predict(events=events)
+
+        return summarize_vertex_predictions(
+            predictions=predictions,
+            roi_vertex_map=roi_vertex_map,
+            modality=modality,
+            model_id=self.model_id,
+            max_regions=max_regions,
+        )
 
 
 def summarize_vertex_predictions(
@@ -148,7 +208,12 @@ def summarize_vertex_predictions(
 
 
 def _coerce_prediction_rows(predictions: Sequence[Sequence[float]]) -> list[list[float]]:
-    if not predictions:
+    try:
+        prediction_count = len(predictions)
+    except TypeError as exc:
+        raise ValueError("predictions must be a sequence of timesteps") from exc
+
+    if prediction_count == 0:
         raise ValueError("predictions must contain at least one timestep")
 
     rows: list[list[float]] = []
@@ -166,6 +231,15 @@ def _coerce_prediction_rows(predictions: Sequence[Sequence[float]]) -> list[list
         rows.append(values)
 
     return rows
+
+
+def _path_arg_for_modality(modality: str) -> str:
+    if modality == "image":
+        raise ValueError("image inputs must be preprocessed to a video before TRIBE inference")
+    try:
+        return MODALITY_PATH_ARGS[modality]
+    except KeyError as exc:
+        raise ValueError(f"unsupported TRIBE modality: {modality}") from exc
 
 
 def _normalize_rows(rows: list[list[float]]) -> list[list[float]]:
