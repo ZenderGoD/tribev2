@@ -98,7 +98,7 @@
 - [x] Run tests and verify they fail because `atherum_modal` is missing.
 - [x] Implement the Modal/FastAPI wrapper around the local worker contract without downloading model weights.
 - [x] Run targeted tests and the no-model suite.
-- [ ] Commit the Modal wrapper.
+- [x] Commit the Modal wrapper.
 
 ## Later Chunks
 
