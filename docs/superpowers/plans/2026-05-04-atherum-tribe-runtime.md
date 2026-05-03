@@ -86,7 +86,21 @@
 - [x] Run targeted tests and the no-model suite.
 - [x] Commit the worker CLI.
 
+## Chunk 3: Cloud Worker Surface
+
+### Task 7: Add Modal/FastAPI deployment wrapper
+
+**Files:**
+- Create: `tribev2/atherum_modal.py`
+- Test: `tests/test_atherum_modal.py`
+
+- [x] Write failing tests for optional Modal import, fake-model request handling, failed response contracts, and runtime dependency metadata.
+- [x] Run tests and verify they fail because `atherum_modal` is missing.
+- [x] Implement the Modal/FastAPI wrapper around the local worker contract without downloading model weights.
+- [x] Run targeted tests and the no-model suite.
+- [ ] Commit the Modal wrapper.
+
 ## Later Chunks
 
 - Add real-model smoke tests gated behind `HF_TOKEN`.
-- Add Modal/FastAPI worker API once the local worker contract is stable.
+- Add Atherum-side Convex/API client that calls the protected Modal endpoint.
