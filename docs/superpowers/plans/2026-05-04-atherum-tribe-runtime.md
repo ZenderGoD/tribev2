@@ -58,7 +58,7 @@
 - [x] Run tests and verify they fail because `atherum_preprocess` is missing.
 - [x] Implement ffmpeg command builders and thin subprocess wrappers.
 - [x] Run targeted tests and smoke tests.
-- [ ] Commit the preprocessing helpers.
+- [x] Commit the preprocessing helpers.
 
 ## Later Chunks
 
