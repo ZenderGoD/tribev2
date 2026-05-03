@@ -46,11 +46,22 @@
 - [x] Run tests and verify they fail because `AtherumTribeRunner` is missing.
 - [x] Implement a lazy-loading runner that accepts an injected model in tests.
 - [x] Run targeted tests and smoke tests.
-- [ ] Commit the runner seam.
+- [x] Commit the runner seam.
+
+### Task 4: Add media preprocessing command helpers
+
+**Files:**
+- Create: `tribev2/atherum_preprocess.py`
+- Test: `tests/test_atherum_preprocess.py`
+
+- [x] Write failing tests for static-image video conversion and worker video preparation commands.
+- [x] Run tests and verify they fail because `atherum_preprocess` is missing.
+- [x] Implement ffmpeg command builders and thin subprocess wrappers.
+- [x] Run targeted tests and smoke tests.
+- [ ] Commit the preprocessing helpers.
 
 ## Later Chunks
 
-- Add image/video preprocessing helpers around ffmpeg.
 - Add a worker-facing runner that calls `TribeModel.from_pretrained`.
 - Add optional atlas-backed ROI map construction.
 - Add real-model smoke tests gated behind `HF_TOKEN`.
