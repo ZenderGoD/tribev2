@@ -84,7 +84,7 @@
 - [x] Run tests and verify they fail because `atherum_worker` is missing.
 - [x] Implement the worker job contract, fake model, `run_worker_job`, and `python -m tribev2.atherum_worker`.
 - [x] Run targeted tests and the no-model suite.
-- [ ] Commit the worker CLI.
+- [x] Commit the worker CLI.
 
 ## Later Chunks
 
