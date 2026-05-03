@@ -70,7 +70,7 @@
 - [x] Run tests and verify they fail because the builder is missing.
 - [x] Implement lazy atlas loading with sorted, stable ROI vertex indices.
 - [x] Run targeted tests and smoke tests.
-- [ ] Commit the ROI map builder.
+- [x] Commit the ROI map builder.
 
 ## Later Chunks
 
