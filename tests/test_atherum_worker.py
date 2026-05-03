@@ -5,6 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from tribev2.atherum import DEFAULT_TRIBE_MODEL_PATH
 from tribev2.atherum_worker import FakeTribeModel, run_worker_job, validate_worker_job
 
 
@@ -35,7 +36,7 @@ class AtherumWorkerTests(unittest.TestCase):
         self.assertEqual(response["status"], "completed")
         self.assertIsNone(response["error"])
         self.assertEqual(response["artifacts"], [])
-        self.assertEqual(response["analysis"]["modelId"], "facebook/tribev2")
+        self.assertEqual(response["analysis"]["modelId"], DEFAULT_TRIBE_MODEL_PATH)
         self.assertEqual(response["analysis"]["modality"], "video")
         self.assertEqual(response["analysis"]["topRegions"][0], "Default Mode Network")
 
@@ -45,6 +46,19 @@ class AtherumWorkerTests(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             validate_worker_job(job)
+
+    def test_validate_worker_job_uses_local_model_path_when_not_supplied(self):
+        normalized = validate_worker_job(example_job())
+
+        self.assertEqual(normalized["modelId"], DEFAULT_TRIBE_MODEL_PATH)
+
+    def test_validate_worker_job_accepts_explicit_local_model_path(self):
+        job = example_job()
+        job["modelId"] = "/private/models/tribev2"
+
+        normalized = validate_worker_job(job)
+
+        self.assertEqual(normalized["modelId"], "/private/models/tribev2")
 
     def test_cli_writes_fake_model_output_json(self):
         with tempfile.TemporaryDirectory() as tmp:

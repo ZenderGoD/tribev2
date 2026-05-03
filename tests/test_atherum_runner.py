@@ -1,6 +1,6 @@
 import unittest
 
-from tribev2.atherum import AtherumTribeRunner
+from tribev2.atherum import AtherumTribeRunner, DEFAULT_TRIBE_MODEL_PATH
 
 
 class FakeModel:
@@ -18,6 +18,11 @@ class FakeModel:
 
 
 class AtherumTribeRunnerTests(unittest.TestCase):
+    def test_defaults_to_local_model_artifact_path(self):
+        runner = AtherumTribeRunner(model=FakeModel())
+
+        self.assertEqual(runner.model_id, DEFAULT_TRIBE_MODEL_PATH)
+
     def test_analyze_path_maps_video_input_to_tribe_and_returns_summary(self):
         model = FakeModel()
         runner = AtherumTribeRunner(model=model)

@@ -16,6 +16,7 @@ from __future__ import annotations
 import os
 from typing import Any
 
+from tribev2.atherum import DEFAULT_TRIBE_MODEL_PATH
 from tribev2.atherum_worker import FakeTribeModel, run_worker_job
 
 
@@ -27,9 +28,12 @@ except ImportError:
 
 MODAL_APP_NAME = "atherum-tribe-worker"
 MODAL_ENDPOINT_LABEL = "analyze"
+MODEL_VOLUME_PATH = "/models"
+MODEL_PATH = DEFAULT_TRIBE_MODEL_PATH
+CACHE_VOLUME_PATH = "/cache"
 MODEL_CACHE_PATH = "/cache/tribev2"
-MODEL_VOLUME_NAME = "atherum-tribe-cache"
-HF_SECRET_NAME = "atherum-tribe-hf"
+MODEL_VOLUME_NAME = "atherum-tribe-model"
+CACHE_VOLUME_NAME = "atherum-tribe-cache"
 TRIBEV2_REPOSITORY_URL = "https://github.com/ZenderGoD/tribev2.git"
 TRIBEV2_GIT_REF = "atherum-worker"
 DEFAULT_GPU = "L4"
@@ -50,7 +54,6 @@ def build_modal_image_requirements() -> dict[str, list[str]]:
         ],
         "pip": [
             "fastapi[standard]",
-            "huggingface_hub",
             "nilearn",
             f"git+{TRIBEV2_REPOSITORY_URL}@{TRIBEV2_GIT_REF}",
         ],
@@ -117,18 +120,23 @@ if modal is None:
 else:
     app = modal.App(MODAL_APP_NAME)
     _image = _build_modal_image()
-    _model_cache_volume = modal.Volume.from_name(
+    _model_volume = modal.Volume.from_name(
         MODEL_VOLUME_NAME,
         create_if_missing=True,
     )
-    _hf_secret = modal.Secret.from_name(HF_SECRET_NAME)
+    _cache_volume = modal.Volume.from_name(
+        CACHE_VOLUME_NAME,
+        create_if_missing=True,
+    )
 
     @app.function(
         image=_image,
-        volumes={MODEL_CACHE_PATH: _model_cache_volume},
+        volumes={
+            MODEL_VOLUME_PATH: _model_volume,
+            CACHE_VOLUME_PATH: _cache_volume,
+        },
         timeout=DEFAULT_TIMEOUT_SECONDS,
         gpu=DEFAULT_GPU,
-        secrets=[_hf_secret],
     )
     @modal.fastapi_endpoint(
         method="POST",

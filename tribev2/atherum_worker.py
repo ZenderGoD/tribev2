@@ -8,7 +8,7 @@
 
 This module defines the JSON job contract Atherum can call later from Convex or
 an API gateway. It is intentionally runnable with ``--fake-model`` so the worker
-surface can be tested before gated model weights are available.
+surface can be tested before local model artifacts are mounted.
 """
 
 from __future__ import annotations
@@ -20,7 +20,12 @@ from pathlib import Path
 import sys
 from typing import Any
 
-from tribev2.atherum import AtherumTribeRunner, build_destrieux_roi_vertex_map
+from tribev2.atherum import (
+    AtherumTribeRunner,
+    DEFAULT_TRIBE_CACHE_FOLDER,
+    build_destrieux_roi_vertex_map,
+    resolve_model_path,
+)
 
 
 SUPPORTED_MODALITIES = {"text", "audio", "video", "multimodal"}
@@ -66,7 +71,7 @@ def validate_worker_job(job: dict[str, Any]) -> dict[str, Any]:
             raise ValueError("roiVertexMap must be an object when provided")
         normalized["roiVertexMap"] = _coerce_roi_vertex_map(roi_vertex_map)
 
-    model_id = job.get("modelId", "facebook/tribev2")
+    model_id = resolve_model_path(job.get("modelId"))
     if not isinstance(model_id, str) or not model_id.strip():
         raise ValueError("modelId must be a nonempty string")
     normalized["modelId"] = model_id.strip()
@@ -83,7 +88,7 @@ def run_worker_job(
     job: dict[str, Any],
     *,
     model: Any | None = None,
-    cache_folder: str = "./cache/tribev2",
+    cache_folder: str = DEFAULT_TRIBE_CACHE_FOLDER,
     device: str = "auto",
 ) -> dict[str, Any]:
     normalized = validate_worker_job(job)
@@ -127,8 +132,17 @@ def build_parser() -> argparse.ArgumentParser:
         help="Use a deterministic no-download fake model for contract testing.",
     )
     parser.add_argument(
+        "--model-path",
+        "--model-id",
+        dest="model_path",
+        help=(
+            "Local TRIBE model folder containing config.yaml and best.ckpt. "
+            "Defaults to TRIBE_MODEL_PATH or /models/tribev2."
+        ),
+    )
+    parser.add_argument(
         "--cache-folder",
-        default="./cache/tribev2",
+        default=DEFAULT_TRIBE_CACHE_FOLDER,
         help="Cache folder passed to TribeModel.from_pretrained in real mode.",
     )
     parser.add_argument(
@@ -143,6 +157,8 @@ def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     try:
         job = json.loads(Path(args.job).read_text(encoding="utf-8"))
+        if args.model_path:
+            job["modelId"] = args.model_path
         model = FakeTribeModel() if args.fake_model else None
         response = run_worker_job(
             job,

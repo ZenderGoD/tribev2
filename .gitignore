@@ -26,6 +26,8 @@ env/
 # Training artifacts
 lightning_logs/
 wandb/
+models/
+*.ckpt
 
 # Testing / type-checking
 .pytest_cache/

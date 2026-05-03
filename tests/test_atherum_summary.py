@@ -1,7 +1,11 @@
 import unittest
 
 
-from tribev2.atherum import build_destrieux_roi_vertex_map, summarize_vertex_predictions
+from tribev2.atherum import (
+    DEFAULT_TRIBE_MODEL_PATH,
+    build_destrieux_roi_vertex_map,
+    summarize_vertex_predictions,
+)
 
 
 class AtherumSummaryTests(unittest.TestCase):
@@ -18,7 +22,7 @@ class AtherumSummaryTests(unittest.TestCase):
             modality="video",
         )
 
-        self.assertEqual(summary["modelId"], "facebook/tribev2")
+        self.assertEqual(summary["modelId"], DEFAULT_TRIBE_MODEL_PATH)
         self.assertEqual(summary["modality"], "video")
         self.assertEqual(summary["predictionShape"], {"timesteps": 2, "vertices": 4})
         self.assertEqual(summary["topRegions"], ["Default Mode Network", "Low-Level Visual Signal"])

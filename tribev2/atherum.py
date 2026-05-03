@@ -14,9 +14,15 @@ GPU workers after real TRIBE predictions are available.
 from __future__ import annotations
 
 from collections.abc import Iterable, Sequence
+import os
 from statistics import mean
 from typing import Any
 
+
+DEFAULT_TRIBE_MODEL_PATH = "/models/tribev2"
+DEFAULT_TRIBE_CACHE_FOLDER = "./cache/tribev2"
+TRIBE_MODEL_PATH_ENV = "TRIBE_MODEL_PATH"
+TRIBE_CACHE_PATH_ENV = "TRIBE_CACHE_PATH"
 
 MODALITY_PATH_ARGS = {
     "text": "text_path",
@@ -87,6 +93,18 @@ DEFAULT_CAVEATS = [
 ]
 
 
+def resolve_model_path(model_path: str | None = None) -> str:
+    if model_path is not None and model_path.strip():
+        return model_path.strip()
+    return os.environ.get(TRIBE_MODEL_PATH_ENV, DEFAULT_TRIBE_MODEL_PATH)
+
+
+def resolve_cache_folder(cache_folder: str | None = None) -> str:
+    if cache_folder is not None and cache_folder.strip():
+        return cache_folder.strip()
+    return os.environ.get(TRIBE_CACHE_PATH_ENV, DEFAULT_TRIBE_CACHE_FOLDER)
+
+
 def build_destrieux_roi_vertex_map(
     *,
     fetch_atlas: Any | None = None,
@@ -135,20 +153,20 @@ class AtherumTribeRunner:
     """Small worker-facing adapter around ``TribeModel``.
 
     Tests can inject a fake model. Production workers can let the runner lazily
-    load ``TribeModel.from_pretrained`` when model weights and credentials exist.
+    load ``TribeModel.from_pretrained`` when local model artifacts are available.
     """
 
     def __init__(
         self,
         *,
         model: Any | None = None,
-        model_id: str = "facebook/tribev2",
-        cache_folder: str = "./cache/tribev2",
+        model_id: str | None = None,
+        cache_folder: str | None = None,
         device: str = "auto",
     ) -> None:
         self._model = model
-        self.model_id = model_id
-        self.cache_folder = cache_folder
+        self.model_id = resolve_model_path(model_id)
+        self.cache_folder = resolve_cache_folder(cache_folder)
         self.device = device
 
     def load_model(self) -> Any:
@@ -189,7 +207,7 @@ def summarize_vertex_predictions(
     roi_vertex_map: dict[str, Iterable[int]],
     *,
     modality: str = "multimodal",
-    model_id: str = "facebook/tribev2",
+    model_id: str = DEFAULT_TRIBE_MODEL_PATH,
     max_regions: int = 5,
 ) -> dict[str, Any]:
     """Convert raw vertex predictions into a bounded Atherum summary.

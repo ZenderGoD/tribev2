@@ -46,9 +46,11 @@ class AtherumModalTests(unittest.TestCase):
         self.assertIsNone(module.analyze)
         self.assertEqual(module.MODAL_APP_NAME, "atherum-tribe-worker")
         self.assertEqual(module.MODAL_ENDPOINT_LABEL, "analyze")
+        self.assertEqual(module.MODEL_PATH, "/models/tribev2")
         self.assertEqual(module.MODEL_CACHE_PATH, "/cache/tribev2")
-        self.assertEqual(module.MODEL_VOLUME_NAME, "atherum-tribe-cache")
-        self.assertEqual(module.HF_SECRET_NAME, "atherum-tribe-hf")
+        self.assertEqual(module.MODEL_VOLUME_NAME, "atherum-tribe-model")
+        self.assertEqual(module.CACHE_VOLUME_NAME, "atherum-tribe-cache")
+        self.assertFalse(hasattr(module, "HF_SECRET_NAME"))
 
     def test_handle_modal_request_runs_worker_contract_with_fake_model(self):
         module = import_without_modal()
@@ -58,7 +60,7 @@ class AtherumModalTests(unittest.TestCase):
         self.assertEqual(response["jobId"], "tribe-job-1")
         self.assertEqual(response["status"], "completed")
         self.assertIsNone(response["error"])
-        self.assertEqual(response["analysis"]["modelId"], "facebook/tribev2")
+        self.assertEqual(response["analysis"]["modelId"], "/models/tribev2")
         self.assertEqual(
             response["analysis"]["predictionShape"],
             {"timesteps": 2, "vertices": 4},
@@ -87,7 +89,7 @@ class AtherumModalTests(unittest.TestCase):
         requirements = module.build_modal_image_requirements()
 
         self.assertIn("fastapi[standard]", requirements["pip"])
-        self.assertIn("huggingface_hub", requirements["pip"])
+        self.assertNotIn("huggingface_hub", requirements["pip"])
         self.assertIn("ffmpeg", requirements["apt"])
         self.assertIn("git", requirements["apt"])
 

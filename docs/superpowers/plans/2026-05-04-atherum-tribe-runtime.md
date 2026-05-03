@@ -100,7 +100,27 @@
 - [x] Run targeted tests and the no-model suite.
 - [x] Commit the Modal wrapper.
 
+## Chunk 4: Local Model Artifact Runtime
+
+### Task 8: Remove Hugging Face runtime assumptions
+
+**Files:**
+- Modify: `tribev2/atherum.py`
+- Modify: `tribev2/atherum_worker.py`
+- Modify: `tribev2/atherum_modal.py`
+- Modify: `scripts/smoke_load_model.py`
+- Modify: `.gitignore`
+- Tests: `tests/test_atherum_summary.py`, `tests/test_atherum_runner.py`, `tests/test_atherum_worker.py`, `tests/test_atherum_modal.py`, `tests/test_smoke_load_model.py`
+
+- [x] Move downloaded model files out of git to `/Users/bishalbanerjee/zeus/models/tribev2`.
+- [x] Write failing tests for local model defaults, local smoke preflight, and no HF secret in the worker wrapper.
+- [x] Change Atherum worker defaults from `facebook/tribev2` to local `/models/tribev2`, with `TRIBE_MODEL_PATH` override support.
+- [x] Update Modal wiring to mount a private model volume and cache volume without an HF secret.
+- [x] Update the smoke script to validate local `config.yaml` and `best.ckpt` before importing TRIBE.
+- [x] Run full no-model tests and local model preflight.
+- [ ] Commit the local artifact runtime changes.
+
 ## Later Chunks
 
-- Add real-model smoke tests gated behind `HF_TOKEN`.
+- Install the heavy inference environment and run a real local model-load smoke test.
 - Add Atherum-side Convex/API client that calls the protected Modal endpoint.
