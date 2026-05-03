@@ -69,10 +69,66 @@ ROI_REGISTRY: dict[str, dict[str, str]] = {
 }
 
 COGNITIVE_LOAD_ROIS = ("VWFA", "DAN", "DMN", "AV_ASSOC")
+ROI_TO_DESTRIEUX = {
+    "FFA": ["G_oc-temp_lat-fusifor"],
+    "V1_V2": ["S_calcarine", "G_cuneus"],
+    "V4": ["G_oc-temp_med-Lingual"],
+    "LO": ["G_occipital_middle"],
+    "PPA": ["G_parahippoc"],
+    "STS": ["S_temporal_sup"],
+    "DAN": ["G_pariet_inf-Angular", "G_pariet_inf-Supramar"],
+    "VWFA": ["G_oc-temp_lat-fusifor"],
+    "DMN": ["G_precuneus", "G_cingul-Post-dorsal"],
+    "AV_ASSOC": ["G_temp_sup-Lateral"],
+}
 DEFAULT_CAVEATS = [
     "TRIBE output is a model-predicted neural-response proxy, not observed audience behavior.",
     "Use this as one signal alongside simulation, panel reasoning, and source evidence.",
 ]
+
+
+def build_destrieux_roi_vertex_map(
+    *,
+    fetch_atlas: Any | None = None,
+    roi_to_parcels: dict[str, list[str]] | None = None,
+) -> dict[str, list[int]]:
+    """Build ROI-to-fsaverage5 vertex indices from the Destrieux surface atlas."""
+
+    if fetch_atlas is None:
+        from nilearn import datasets
+
+        fetch_atlas = datasets.fetch_atlas_surf_destrieux
+
+    atlas = fetch_atlas()
+    map_left = list(atlas["map_left"])
+    map_right = list(atlas["map_right"])
+    labels = [
+        label.decode("utf-8") if isinstance(label, bytes) else str(label)
+        for label in atlas["labels"]
+    ]
+
+    n_left = len(map_left)
+    parcel_map = roi_to_parcels or ROI_TO_DESTRIEUX
+    roi_vertex_map: dict[str, list[int]] = {}
+
+    for roi_key, parcel_names in parcel_map.items():
+        vertices: list[int] = []
+        for parcel_name in parcel_names:
+            if parcel_name not in labels:
+                continue
+            label_index = labels.index(parcel_name)
+            vertices.extend(
+                index for index, value in enumerate(map_left) if value == label_index
+            )
+            if roi_key != "VWFA":
+                vertices.extend(
+                    n_left + index
+                    for index, value in enumerate(map_right)
+                    if value == label_index
+                )
+        roi_vertex_map[roi_key] = sorted(set(vertices))
+
+    return roi_vertex_map
 
 
 class AtherumTribeRunner:

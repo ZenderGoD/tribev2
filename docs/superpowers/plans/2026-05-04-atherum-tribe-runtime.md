@@ -60,6 +60,18 @@
 - [x] Run targeted tests and smoke tests.
 - [x] Commit the preprocessing helpers.
 
+### Task 5: Add atlas-backed ROI map builder
+
+**Files:**
+- Modify: `tribev2/atherum.py`
+- Test: `tests/test_atherum_summary.py`
+
+- [x] Write a failing test using a fake Destrieux atlas fixture.
+- [x] Run tests and verify they fail because the builder is missing.
+- [x] Implement lazy atlas loading with sorted, stable ROI vertex indices.
+- [x] Run targeted tests and smoke tests.
+- [ ] Commit the ROI map builder.
+
 ## Later Chunks
 
 - Add a worker-facing runner that calls `TribeModel.from_pretrained`.

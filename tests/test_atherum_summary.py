@@ -1,7 +1,7 @@
 import unittest
 
 
-from tribev2.atherum import summarize_vertex_predictions
+from tribev2.atherum import build_destrieux_roi_vertex_map, summarize_vertex_predictions
 
 
 class AtherumSummaryTests(unittest.TestCase):
@@ -50,6 +50,25 @@ class AtherumSummaryTests(unittest.TestCase):
     def test_rejects_empty_predictions(self):
         with self.assertRaises(ValueError):
             summarize_vertex_predictions(predictions=[], roi_vertex_map={"V1_V2": [0]})
+
+    def test_builds_destrieux_roi_vertex_map_from_supplied_atlas(self):
+        def fetch_atlas():
+            return {
+                "map_left": [1, 2, 1, 3],
+                "map_right": [2, 1, 3, 1],
+                "labels": [b"unknown", b"S_calcarine", b"G_cuneus", b"G_precuneus"],
+            }
+
+        roi_map = build_destrieux_roi_vertex_map(
+            fetch_atlas=fetch_atlas,
+            roi_to_parcels={
+                "V1_V2": ["S_calcarine", "G_cuneus"],
+                "DMN": ["G_precuneus"],
+            },
+        )
+
+        self.assertEqual(roi_map["V1_V2"], [0, 1, 2, 4, 5, 7])
+        self.assertEqual(roi_map["DMN"], [3, 6])
 
 
 if __name__ == "__main__":
