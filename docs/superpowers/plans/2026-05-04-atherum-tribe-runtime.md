@@ -133,7 +133,7 @@
 - [x] Implement `configUpdate` validation and runner forwarding.
 - [x] Run targeted tests.
 - [x] Run the real video worker CLI with offline V-JEPA2 cache and CPU-safe overrides.
-- [ ] Run full test suite and commit the worker config override changes.
+- [x] Run full test suite and commit the worker config override changes.
 
 ### Task 10: Cache extractor weights for local/offline runtime
 
