@@ -120,7 +120,32 @@
 - [x] Run full no-model tests and local model preflight.
 - [x] Commit the local artifact runtime changes.
 
+## Chunk 5: Extractor Cache And Real Worker Video
+
+### Task 9: Add worker runtime config overrides
+
+**Files:**
+- Modify: `tribev2/atherum.py`
+- Modify: `tribev2/atherum_worker.py`
+- Tests: `tests/test_atherum_runner.py`, `tests/test_atherum_worker.py`
+
+- [x] Write failing tests for passing `configUpdate` through the worker to `TribeModel.from_pretrained`.
+- [x] Implement `configUpdate` validation and runner forwarding.
+- [x] Run targeted tests.
+- [x] Run the real video worker CLI with offline V-JEPA2 cache and CPU-safe overrides.
+- [ ] Run full test suite and commit the worker config override changes.
+
+### Task 10: Cache extractor weights for local/offline runtime
+
+**Local artifacts:**
+- `/Users/bishalbanerjee/zeus/models/hf-cache`
+- `/Users/bishalbanerjee/zeus/models/vjepa2-vitg-fpc64-256`
+
+- [x] Download and validate `facebook/vjepa2-vitg-fpc64-256` for offline video inference.
+- [x] Download and validate `facebook/w2v-bert-2.0` for offline audio inference.
+- [ ] Download `meta-llama/Llama-3.2-3B` after account access is approved.
+
 ## Later Chunks
 
-- Install the heavy inference environment and run a real local model-load smoke test.
+- Deploy the worker with mounted model/cache volumes.
 - Add Atherum-side Convex/API client that calls the protected Modal endpoint.

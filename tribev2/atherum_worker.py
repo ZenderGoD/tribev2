@@ -81,6 +81,12 @@ def validate_worker_job(job: dict[str, Any]) -> dict[str, Any]:
         raise ValueError("maxRegions must be a positive integer")
     normalized["maxRegions"] = max_regions
 
+    config_update = job.get("configUpdate")
+    if config_update is not None:
+        if not isinstance(config_update, dict):
+            raise ValueError("configUpdate must be an object when provided")
+        normalized["configUpdate"] = _coerce_config_update(config_update)
+
     return normalized
 
 
@@ -98,6 +104,7 @@ def run_worker_job(
         model_id=normalized["modelId"],
         cache_folder=cache_folder,
         device=device,
+        config_update=normalized.get("configUpdate"),
     )
 
     analysis = runner.analyze_path(
@@ -187,6 +194,15 @@ def _coerce_roi_vertex_map(raw: dict[str, Any]) -> dict[str, list[int]]:
             raise ValueError(f"roiVertexMap.{key} must be an array of vertex indices")
         roi_vertex_map[key] = [int(vertex) for vertex in vertices]
     return roi_vertex_map
+
+
+def _coerce_config_update(raw: dict[str, Any]) -> dict[str, Any]:
+    config_update: dict[str, Any] = {}
+    for key, value in raw.items():
+        if not isinstance(key, str) or not key:
+            raise ValueError("configUpdate keys must be nonempty strings")
+        config_update[key] = value
+    return config_update
 
 
 if __name__ == "__main__":

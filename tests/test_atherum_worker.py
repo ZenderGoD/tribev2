@@ -60,6 +60,25 @@ class AtherumWorkerTests(unittest.TestCase):
 
         self.assertEqual(normalized["modelId"], "/private/models/tribev2")
 
+    def test_validate_worker_job_accepts_json_config_update(self):
+        job = example_job()
+        job["configUpdate"] = {
+            "data.num_workers": 0,
+            "data.video_feature.image.device": "cpu",
+            "data.video_feature.num_frames": 8,
+        }
+
+        normalized = validate_worker_job(job)
+
+        self.assertEqual(normalized["configUpdate"], job["configUpdate"])
+
+    def test_validate_worker_job_rejects_non_object_config_update(self):
+        job = example_job()
+        job["configUpdate"] = ["data.num_workers=0"]
+
+        with self.assertRaises(ValueError):
+            validate_worker_job(job)
+
     def test_cli_writes_fake_model_output_json(self):
         with tempfile.TemporaryDirectory() as tmp:
             job_path = Path(tmp) / "job.json"

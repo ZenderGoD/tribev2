@@ -163,11 +163,13 @@ class AtherumTribeRunner:
         model_id: str | None = None,
         cache_folder: str | None = None,
         device: str = "auto",
+        config_update: dict[str, Any] | None = None,
     ) -> None:
         self._model = model
         self.model_id = resolve_model_path(model_id)
         self.cache_folder = resolve_cache_folder(cache_folder)
         self.device = device
+        self.config_update = config_update
 
     def load_model(self) -> Any:
         if self._model is None:
@@ -177,6 +179,7 @@ class AtherumTribeRunner:
                 self.model_id,
                 cache_folder=self.cache_folder,
                 device=self.device,
+                config_update=self.config_update,
             )
         return self._model
 
